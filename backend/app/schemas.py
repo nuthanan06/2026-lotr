@@ -4,7 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.crisis_note import NoteType, Priority
+from app.models.crisis_note import NoteAction, NoteType, Priority
+from app.models.map import ConflictStatus
 
 
 class HealthResponse(BaseModel):
@@ -23,6 +24,190 @@ class CharacterResponse(BaseModel):
     id: int
     name: str
     created_at: datetime
+    race: str = "MAN"
+    avatar_url: str | None = None
+
+
+class MapCharacterResponse(CharacterResponse):
+    x: float | None
+    y: float | None
+    region_id: int | None
+    army_mobilized: bool
+    has_ring: bool
+    group_id: int | None
+    # Corruption as of `as_of`, on the curve a × hours_held². While
+    # `accruing`, the client extrapolates with ring_hours + elapsed time.
+    corruption: float
+    corruption_a: float
+    corruption_a_is_custom: bool
+    ring_hours: float
+    accruing: bool
+    corruption_rate_per_hour: float
+    as_of: datetime
+    ongoing_conflict_ids: list[int]
+
+
+class CharacterUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    race: str | None = None
+    avatar_url: str | None = Field(default=None, max_length=1024)
+    army_mobilized: bool | None = None
+    corruption: float | None = Field(default=None, ge=0, le=100)
+    # Curve steepness; send null to go back to the race default.
+    corruption_a: float | None = Field(default=None, gt=0, le=100)
+
+
+class InlineNote(BaseModel):
+    title: str = Field(min_length=1, max_length=512)
+    description: str = Field(min_length=1)
+    priority: Priority = Priority.MEDIUM
+    note_type: NoteType = NoteType.PRIVATE_DIRECTIVE
+
+
+class MoveRequest(BaseModel):
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+    # Every move must cite a crisis note: either an existing one or a new
+    # one written in the move dialog.
+    note_id: int | None = None
+    note: InlineNote | None = None
+    discover_region: bool = False
+
+
+class MovementResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    character_id: int
+    from_x: float | None
+    from_y: float | None
+    to_x: float
+    to_y: float
+    from_region_name: str | None
+    to_region_name: str | None
+    note_id: int | None
+    note_title: str | None
+    created_at: datetime
+
+
+# ── Game state / regions ─────────────────────────────────────────────────────
+
+class GameStateResponse(BaseModel):
+    ring_holder_id: int | None
+    clock_paused: bool
+    race_curve_a: dict[str, float]
+
+
+class GameStateUpdate(BaseModel):
+    clock_paused: bool | None = None
+
+
+class RingHolderUpdate(BaseModel):
+    character_id: int | None
+
+
+class RegionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    slug: str
+    name: str
+    polygon: list[list[float]]
+    discovered: bool
+    revealed: bool
+    revealed_at: datetime | None
+    status: str | None
+    notes: str | None
+
+
+class RevealResult(BaseModel):
+    revealed: list[int]
+
+
+class RegionUpdate(BaseModel):
+    discovered: bool | None = None
+    status: str | None = Field(default=None, max_length=255)
+    notes: str | None = None
+
+
+# ── Groups ───────────────────────────────────────────────────────────────────
+
+class GroupCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
+    member_ids: list[int] = []
+
+
+class GroupUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
+
+
+class GroupMembersUpdate(BaseModel):
+    """Move these characters into the group (out of whatever group they were in)."""
+
+    character_ids: list[int] = Field(min_length=1)
+
+
+class GroupResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    color: str
+    created_at: datetime
+    member_ids: list[int]
+
+
+class LastSeen(BaseModel):
+    character_id: int
+    x: float
+    y: float
+    seen_at: datetime
+
+
+class GroupViewResponse(BaseModel):
+    """What one group's delegates know: their own members live, everyone else
+    where they were last seen together."""
+
+    group: GroupResponse
+    member_ids: list[int]
+    last_seen: list[LastSeen]
+
+
+# ── Conflicts ────────────────────────────────────────────────────────────────
+
+class ConflictCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    party_ids: list[int] = Field(min_length=2)
+    note_id: int | None = None
+    # Timed crisis: minutes until staff are alerted if it's unresolved.
+    timer_minutes: int | None = Field(default=None, ge=1, le=24 * 60)
+
+
+class ConflictUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    party_ids: list[int] | None = Field(default=None, min_length=2)
+    deadline_at: datetime | None = None
+
+
+class ConflictResolve(BaseModel):
+    winner_id: int | None = None
+    outcome_summary: str = Field(min_length=1)
+
+
+class ConflictResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    status: ConflictStatus
+    parties: list[CharacterResponse]
+    winner_id: int | None
+    outcome_summary: str | None
+    created_at: datetime
+    resolved_at: datetime | None
+    deadline_at: datetime | None
 
 
 # ── Crisis Periods ───────────────────────────────────────────────────────────
@@ -55,6 +240,13 @@ class CrisisNoteCreate(BaseModel):
     crisis_staff_notes: str | None = None
     priority: Priority
     note_type: NoteType
+    action: NoteAction = NoteAction.NONE
+    conflict_id: int | None = None
+    # Co-authors beyond character_id, and characters the note is aimed at.
+    author_ids: list[int] = []
+    target_ids: list[int] = []
+    # Timed crisis: minutes until staff are alerted if it's unresolved.
+    timer_minutes: int | None = Field(default=None, ge=1, le=24 * 60)
 
 
 class CrisisNoteUpdate(BaseModel):
@@ -64,6 +256,12 @@ class CrisisNoteUpdate(BaseModel):
     crisis_staff_notes: str | None = None
     priority: Priority | None = None
     note_type: NoteType | None = None
+    action: NoteAction | None = None
+    conflict_id: int | None = None
+    author_ids: list[int] | None = None
+    target_ids: list[int] | None = None
+    deadline_at: datetime | None = None
+    resolved: bool | None = None
 
 
 class CrisisNoteResponse(BaseModel):
@@ -77,6 +275,12 @@ class CrisisNoteResponse(BaseModel):
     crisis_staff_notes: str | None
     priority: Priority
     note_type: NoteType
+    action: NoteAction
+    conflict_id: int | None
+    authors: list[CharacterResponse]
+    targets: list[CharacterResponse]
+    deadline_at: datetime | None
+    resolved_at: datetime | None
     created_at: datetime
 
 

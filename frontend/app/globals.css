@@ -153,3 +153,172 @@
   max-width: 1120px;
   padding: 1.5rem;
 }
+
+/* ── Middle-earth map markers (components/map/MapCanvas.tsx) ─────────────── */
+
+/* Leaflet's clickable region shapes otherwise show the browser focus box. */
+.leaflet-interactive:focus {
+  outline: none;
+}
+
+/* Delegate view fog: fully opaque (nothing may show through), with blurred
+   edges so region borders read as mist rather than cut-out polygons. */
+.leaflet-fog-pane svg {
+  filter: blur(9px);
+}
+
+.lotr-pin {
+  position: relative;
+  width: 39px;
+  height: 58px;
+  cursor: grab;
+}
+.lotr-pin-head,
+.lotr-pin-tail,
+.lotr-pin-face,
+.lotr-badge,
+.lotr-badge img {
+  position: absolute;
+  display: block;
+}
+.lotr-pin-head {
+  left: 0;
+  top: 0;
+}
+.lotr-pin-tail {
+  left: 6px;
+  top: 34px;
+}
+.lotr-pin-face {
+  left: 2px;
+  top: 2px;
+  width: 35px;
+  height: 35px;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+.lotr-pin-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font: 600 13px/1 var(--font-sans);
+}
+/* The Ring holder's pin glows. */
+.lotr-pin-ring .lotr-pin-head,
+.lotr-pin-ring .lotr-pin-face {
+  filter: drop-shadow(0 0 6px #ff6600) drop-shadow(0 0 2px #ffb000);
+}
+.lotr-badge {
+  left: -6px;
+  width: 19px;
+  height: 19px;
+}
+.lotr-badge img {
+  left: 0;
+  top: 0;
+}
+/* Group colour ring around a pin's face (shown once the committee has split). */
+.lotr-pin-group {
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  width: 41px;
+  height: 41px;
+  border: 3px solid;
+  border-radius: 9999px;
+}
+/* Someone outside the viewing group, at their last known position. */
+.lotr-pin-ghost {
+  opacity: 0.55;
+  filter: grayscale(1);
+  cursor: default;
+}
+
+/* Battles: a pulsing marker with its name, joined to the parties by dotted lines. */
+.lotr-battle {
+  position: relative;
+  width: 39px;
+  height: 39px;
+  cursor: pointer;
+}
+.lotr-battle img {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.lotr-battle-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #b91c1c;
+  animation: lotr-battle-pulse 2s ease-out infinite;
+}
+.lotr-battle-overdue .lotr-battle-pulse {
+  animation-duration: 0.9s;
+}
+.lotr-battle-label {
+  position: absolute;
+  bottom: 43px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 1px 8px;
+  border-radius: 9999px;
+  background: rgb(42 32 22 / 0.88);
+  color: #f5e6c4;
+  font: 600 11px/18px var(--font-sans);
+}
+.lotr-battle-overdue .lotr-battle-label {
+  background: #b91c1c;
+  color: #fff;
+}
+@keyframes lotr-battle-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+
+/* Fog lifting when a crisis update reveals new lands. */
+.lotr-fog-fade {
+  animation: lotr-fog-fade 2.6s ease-out forwards;
+}
+@keyframes lotr-fog-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.lotr-reveal-banner {
+  animation: lotr-reveal-banner 6s ease-in-out forwards;
+}
+@keyframes lotr-reveal-banner {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  10%,
+  85% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lotr-battle-pulse,
+  .lotr-reveal-banner {
+    animation: none;
+  }
+  .lotr-fog-fade {
+    animation-duration: 0.01s;
+  }
+}

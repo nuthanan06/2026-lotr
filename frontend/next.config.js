@@ -27,6 +27,8 @@ if (fs.existsSync(rootEnvPath)) {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // The dev-mode "N" badge sits on top of the map's zoom control.
+  devIndicators: false,
   images: {
     unoptimized: true
   }

@@ -1,9 +1,23 @@
 import { apiClient } from "@/lib/apiClient";
-import type { BulkUploadResult, CharacterCreate, CharacterResponse } from "@/types/api";
+import type {
+  BulkUploadResult,
+  CharacterCreate,
+  CharacterResponse,
+  CharacterUpdate,
+  MapCharacter,
+  MovementResponse,
+  MoveRequest,
+} from "@/types/api";
 
 export const charactersService = {
-  list: () => apiClient.get<CharacterResponse[]>("/api/characters"),
+  list: () => apiClient.get<MapCharacter[]>("/api/characters"),
   create: (body: CharacterCreate) => apiClient.post<CharacterResponse>("/api/characters", body),
+  update: (id: number, body: CharacterUpdate) =>
+    apiClient.patch<MapCharacter>(`/api/characters/${id}`, body),
+  move: (id: number, body: MoveRequest) =>
+    apiClient.post<MapCharacter>(`/api/characters/${id}/move`, body),
+  movements: (id: number) =>
+    apiClient.get<MovementResponse[]>(`/api/characters/${id}/movements`),
   delete: (id: number) => apiClient.delete<void>(`/api/characters/${id}`),
 
   bulkUpload: async (file: File): Promise<BulkUploadResult> => {

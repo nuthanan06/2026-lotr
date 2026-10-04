@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.crisis_note import CrisisPeriod
+from app.api.regions import reveal_discovered
 from app.schemas import CrisisPeriodCreate, CrisisPeriodResponse
 
 
@@ -66,6 +67,8 @@ def archive_period(period_id: int, db: Session = Depends(get_db)) -> CrisisPerio
         raise HTTPException(status_code=409, detail="Period is already archived.")
     period.is_active = False
     period.archived_at = datetime.now(timezone.utc)
+    # Publishing a crisis update is when delegates learn of newly found lands.
+    reveal_discovered(db)
     next_period = CrisisPeriod(name=_next_period_name(period.name), is_active=True)
     db.add(next_period)
     db.commit()
