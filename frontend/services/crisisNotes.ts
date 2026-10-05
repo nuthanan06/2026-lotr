@@ -15,6 +15,7 @@ export const crisisNotesService = {
     if (filters.character_id != null) params.set("character_id", String(filters.character_id));
     if (filters.priority) params.set("priority", filters.priority);
     if (filters.note_type) params.set("note_type", filters.note_type);
+    if (filters.conflict_id != null) params.set("conflict_id", String(filters.conflict_id));
     if (filters.q) params.set("q", filters.q);
     return apiClient.get<CrisisNoteResponse[]>(`/api/notes?${params}`);
   },

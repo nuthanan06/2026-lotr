@@ -107,6 +107,7 @@ export function NoteFilters({ filters, onChange }: Props) {
           <SelectItem value="__all__">All types</SelectItem>
           <SelectItem value="PRIVATE_DIRECTIVE">Private</SelectItem>
           <SelectItem value="PUBLIC_DIRECTIVE">Public</SelectItem>
+          <SelectItem value="CRISIS_UPDATE">Crisis Update</SelectItem>
         </SelectContent>
       </Select>
 

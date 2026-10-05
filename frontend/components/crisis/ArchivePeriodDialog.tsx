@@ -28,8 +28,9 @@ export function ArchivePeriodDialog({ periodId, periodName, open, onOpenChange }
         <AlertDialogHeader>
           <AlertDialogTitle>Archive "{periodName}"?</AlertDialogTitle>
           <AlertDialogDescription>
-            All current notes will be moved to the archive. The next round will start
-            automatically so crisis staff can keep logging without interruption.
+            All current notes will be moved to the archive and any newly discovered regions are
+            revealed to delegates. The next round will start automatically so crisis staff can keep
+            logging without interruption.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

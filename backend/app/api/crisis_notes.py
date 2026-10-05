@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
-from app.models.crisis_note import Character, CrisisNote, CrisisPeriod, NoteType, Priority
+from app.models.crisis_note import (
+    Character,
+    CrisisNote,
+    CrisisPeriod,
+    NoteType,
+    Priority,
+    note_characters,
+)
+from app.models.map import Conflict
 from app.schemas import (
     AnalyticsSummary,
     CrisisNoteCreate,
@@ -15,8 +25,14 @@ from app.schemas import (
     NotesByCharacter,
     PriorityCount,
 )
+from app.services.notes import require_characters, set_note_characters
 
 router = APIRouter(prefix="/notes", tags=["notes"])
+
+
+def _check_conflict(db: Session, conflict_id: int | None) -> None:
+    if conflict_id is not None and not db.get(Conflict, conflict_id):
+        raise HTTPException(status_code=404, detail="Conflict not found.")
 
 
 @router.get("/analytics", response_model=AnalyticsSummary)
@@ -74,16 +90,30 @@ def list_notes(
     character_id: int | None = Query(None),
     priority: Priority | None = Query(None),
     note_type: NoteType | None = Query(None),
+    conflict_id: int | None = Query(None),
     q: str | None = Query(None),
     db: Session = Depends(get_db),
 ) -> list[CrisisNote]:
-    query = db.query(CrisisNote)
+    query = db.query(CrisisNote).options(
+        selectinload(CrisisNote.character),
+        selectinload(CrisisNote.authors),
+        selectinload(CrisisNote.targets),
+    )
     if period_id is not None:
         query = query.filter(CrisisNote.period_id == period_id)
     elif archived_only:
         query = query.join(CrisisPeriod).filter(CrisisPeriod.is_active.is_(False))
     if character_id is not None:
-        query = query.filter(CrisisNote.character_id == character_id)
+        # A note belongs to a character's log if it's filed under them or
+        # they're linked to it as a co-author or target.
+        linked = select(note_characters.c.note_id).where(
+            note_characters.c.character_id == character_id
+        )
+        query = query.filter(
+            or_(CrisisNote.character_id == character_id, CrisisNote.id.in_(linked))
+        )
+    if conflict_id is not None:
+        query = query.filter(CrisisNote.conflict_id == conflict_id)
     if priority is not None:
         query = query.filter(CrisisNote.priority == priority)
     if note_type is not None:
@@ -114,6 +144,8 @@ def create_note(body: CrisisNoteCreate, db: Session = Depends(get_db)) -> Crisis
     character = db.get(Character, body.character_id)
     if not character:
         raise HTTPException(status_code=404, detail="Character not found.")
+    require_characters(db, [*body.author_ids, *body.target_ids])
+    _check_conflict(db, body.conflict_id)
 
     note = CrisisNote(
         character_id=body.character_id,
@@ -123,8 +155,17 @@ def create_note(body: CrisisNoteCreate, db: Session = Depends(get_db)) -> Crisis
         crisis_staff_notes=body.crisis_staff_notes,
         priority=body.priority,
         note_type=body.note_type,
+        action=body.action,
+        conflict_id=body.conflict_id,
+        deadline_at=(
+            datetime.now(timezone.utc) + timedelta(minutes=body.timer_minutes)
+            if body.timer_minutes
+            else None
+        ),
     )
     db.add(note)
+    db.flush()
+    set_note_characters(db, note, body.author_ids, body.target_ids)
     db.commit()
     db.refresh(note)
     return note
@@ -141,9 +182,25 @@ def update_note(note_id: int, body: CrisisNoteUpdate, db: Session = Depends(get_
         character = db.get(Character, updates["character_id"])
         if not character:
             raise HTTPException(status_code=404, detail="Character not found.")
+    if "conflict_id" in updates:
+        _check_conflict(db, updates["conflict_id"])
 
+    author_ids = updates.pop("author_ids", None)
+    target_ids = updates.pop("target_ids", None)
+    resolved = updates.pop("resolved", None)
+    if resolved is not None:
+        note.resolved_at = datetime.now(timezone.utc) if resolved else None
     for field, value in updates.items():
         setattr(note, field, value)
+    if author_ids is not None or target_ids is not None:
+        require_characters(db, [*(author_ids or []), *(target_ids or [])])
+        db.flush()
+        set_note_characters(
+            db,
+            note,
+            author_ids if author_ids is not None else [a.id for a in note.authors],
+            target_ids if target_ids is not None else [t.id for t in note.targets],
+        )
 
     try:
         db.commit()

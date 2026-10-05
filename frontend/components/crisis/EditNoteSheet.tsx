@@ -124,6 +124,7 @@ export function EditNoteSheet({ note, onOpenChange }: Props) {
               <SelectContent>
                 <SelectItem value="PRIVATE_DIRECTIVE">Private Directive</SelectItem>
                 <SelectItem value="PUBLIC_DIRECTIVE">Public Directive</SelectItem>
+                <SelectItem value="CRISIS_UPDATE">Crisis Update</SelectItem>
               </SelectContent>
             </Select>
           </div>

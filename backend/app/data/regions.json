@@ -1,0 +1,894 @@
+[
+ {
+  "slug": "lindon",
+  "name": "Lindon",
+  "discovered": false,
+  "status": "Elven havens; ships still sail West",
+  "polygon": [
+   [
+    0.14,
+    0.1
+   ],
+   [
+    0.24,
+    0.09
+   ],
+   [
+    0.27,
+    0.2
+   ],
+   [
+    0.25,
+    0.32
+   ],
+   [
+    0.28,
+    0.42
+   ],
+   [
+    0.26,
+    0.47
+   ],
+   [
+    0.19,
+    0.46
+   ],
+   [
+    0.15,
+    0.38
+   ],
+   [
+    0.13,
+    0.25
+   ]
+  ]
+ },
+ {
+  "slug": "forodwaith",
+  "name": "Forodwaith",
+  "discovered": false,
+  "status": "Frozen wastes",
+  "polygon": [
+   [
+    0.45,
+    0.02
+   ],
+   [
+    0.65,
+    0.02
+   ],
+   [
+    0.65,
+    0.1
+   ],
+   [
+    0.56,
+    0.13
+   ],
+   [
+    0.48,
+    0.14
+   ],
+   [
+    0.45,
+    0.12
+   ]
+  ]
+ },
+ {
+  "slug": "angmar",
+  "name": "Angmar",
+  "discovered": false,
+  "status": "Ruins of the Witch-realm",
+  "polygon": [
+   [
+    0.27,
+    0.03
+   ],
+   [
+    0.45,
+    0.03
+   ],
+   [
+    0.45,
+    0.12
+   ],
+   [
+    0.48,
+    0.14
+   ],
+   [
+    0.4,
+    0.14
+   ],
+   [
+    0.3,
+    0.13
+   ],
+   [
+    0.27,
+    0.1
+   ]
+  ]
+ },
+ {
+  "slug": "arnor",
+  "name": "Arnor (North Downs)",
+  "discovered": false,
+  "status": "Empty lands of the lost kingdom",
+  "polygon": [
+   [
+    0.26,
+    0.12
+   ],
+   [
+    0.3,
+    0.13
+   ],
+   [
+    0.4,
+    0.14
+   ],
+   [
+    0.48,
+    0.15
+   ],
+   [
+    0.44,
+    0.18
+   ],
+   [
+    0.36,
+    0.22
+   ],
+   [
+    0.29,
+    0.22
+   ],
+   [
+    0.27,
+    0.2
+   ]
+  ]
+ },
+ {
+  "slug": "the-shire",
+  "name": "The Shire",
+  "discovered": true,
+  "status": "Peaceful farmland",
+  "polygon": [
+   [
+    0.29,
+    0.22
+   ],
+   [
+    0.36,
+    0.22
+   ],
+   [
+    0.38,
+    0.27
+   ],
+   [
+    0.36,
+    0.34
+   ],
+   [
+    0.3,
+    0.34
+   ],
+   [
+    0.28,
+    0.28
+   ]
+  ]
+ },
+ {
+  "slug": "bree-land",
+  "name": "Bree-land & Weathertop",
+  "discovered": true,
+  "status": "Rangers watch the roads",
+  "polygon": [
+   [
+    0.36,
+    0.22
+   ],
+   [
+    0.44,
+    0.18
+   ],
+   [
+    0.44,
+    0.3
+   ],
+   [
+    0.38,
+    0.3
+   ],
+   [
+    0.38,
+    0.27
+   ]
+  ]
+ },
+ {
+  "slug": "rhudaur",
+  "name": "Rhudaur & Rivendell",
+  "discovered": true,
+  "status": "Rivendell — sanctuary of Elrond",
+  "polygon": [
+   [
+    0.44,
+    0.18
+   ],
+   [
+    0.5,
+    0.14
+   ],
+   [
+    0.5,
+    0.32
+   ],
+   [
+    0.44,
+    0.32
+   ],
+   [
+    0.44,
+    0.3
+   ]
+  ]
+ },
+ {
+  "slug": "cardolan",
+  "name": "Cardolan & Minhiriath",
+  "discovered": false,
+  "status": "Barrow-downs and empty fields",
+  "polygon": [
+   [
+    0.28,
+    0.34
+   ],
+   [
+    0.36,
+    0.34
+   ],
+   [
+    0.38,
+    0.3
+   ],
+   [
+    0.44,
+    0.3
+   ],
+   [
+    0.44,
+    0.32
+   ],
+   [
+    0.48,
+    0.38
+   ],
+   [
+    0.46,
+    0.41
+   ],
+   [
+    0.38,
+    0.42
+   ],
+   [
+    0.3,
+    0.46
+   ],
+   [
+    0.27,
+    0.42
+   ]
+  ]
+ },
+ {
+  "slug": "enedwaith",
+  "name": "Enedwaith & Dunland",
+  "discovered": false,
+  "status": "Hostile Dunlending clans",
+  "polygon": [
+   [
+    0.3,
+    0.46
+   ],
+   [
+    0.38,
+    0.42
+   ],
+   [
+    0.46,
+    0.41
+   ],
+   [
+    0.47,
+    0.48
+   ],
+   [
+    0.44,
+    0.5
+   ],
+   [
+    0.42,
+    0.58
+   ],
+   [
+    0.34,
+    0.6
+   ],
+   [
+    0.28,
+    0.54
+   ]
+  ]
+ },
+ {
+  "slug": "misty-mountains",
+  "name": "Misty Mountains & Moria",
+  "discovered": false,
+  "status": "Goblins in the deep; the Balrog stirs",
+  "polygon": [
+   [
+    0.5,
+    0.1
+   ],
+   [
+    0.54,
+    0.1
+   ],
+   [
+    0.53,
+    0.3
+   ],
+   [
+    0.52,
+    0.38
+   ],
+   [
+    0.51,
+    0.47
+   ],
+   [
+    0.47,
+    0.48
+   ],
+   [
+    0.46,
+    0.41
+   ],
+   [
+    0.48,
+    0.38
+   ],
+   [
+    0.5,
+    0.32
+   ]
+  ]
+ },
+ {
+  "slug": "lothlorien",
+  "name": "Lothlórien",
+  "discovered": false,
+  "status": "The Golden Wood of Galadriel",
+  "polygon": [
+   [
+    0.52,
+    0.38
+   ],
+   [
+    0.55,
+    0.4
+   ],
+   [
+    0.55,
+    0.47
+   ],
+   [
+    0.51,
+    0.47
+   ]
+  ]
+ },
+ {
+  "slug": "vales-of-anduin",
+  "name": "Vales of Anduin",
+  "discovered": false,
+  "status": "Beornings guard the river",
+  "polygon": [
+   [
+    0.54,
+    0.1
+   ],
+   [
+    0.56,
+    0.1
+   ],
+   [
+    0.55,
+    0.22
+   ],
+   [
+    0.55,
+    0.4
+   ],
+   [
+    0.52,
+    0.38
+   ],
+   [
+    0.53,
+    0.3
+   ]
+  ]
+ },
+ {
+  "slug": "mirkwood",
+  "name": "Mirkwood",
+  "discovered": false,
+  "status": "Spiders and the shadow of Dol Guldur",
+  "polygon": [
+   [
+    0.56,
+    0.1
+   ],
+   [
+    0.64,
+    0.12
+   ],
+   [
+    0.64,
+    0.22
+   ],
+   [
+    0.62,
+    0.32
+   ],
+   [
+    0.61,
+    0.46
+   ],
+   [
+    0.55,
+    0.47
+   ],
+   [
+    0.55,
+    0.4
+   ],
+   [
+    0.55,
+    0.22
+   ]
+  ]
+ },
+ {
+  "slug": "erebor",
+  "name": "Erebor, Dale & Iron Hills",
+  "discovered": false,
+  "status": "Dwarves and Men of Dale",
+  "polygon": [
+   [
+    0.64,
+    0.1
+   ],
+   [
+    0.76,
+    0.11
+   ],
+   [
+    0.78,
+    0.2
+   ],
+   [
+    0.7,
+    0.24
+   ],
+   [
+    0.64,
+    0.22
+   ],
+   [
+    0.64,
+    0.12
+   ]
+  ]
+ },
+ {
+  "slug": "brown-lands",
+  "name": "Brown Lands & Emyn Muil",
+  "discovered": false,
+  "status": "Barren, desolate country",
+  "polygon": [
+   [
+    0.55,
+    0.47
+   ],
+   [
+    0.61,
+    0.46
+   ],
+   [
+    0.64,
+    0.4
+   ],
+   [
+    0.66,
+    0.5
+   ],
+   [
+    0.66,
+    0.56
+   ],
+   [
+    0.58,
+    0.56
+   ],
+   [
+    0.55,
+    0.5
+   ]
+  ]
+ },
+ {
+  "slug": "rhun",
+  "name": "Rhûn",
+  "discovered": false,
+  "status": "Easterlings muster for Sauron",
+  "polygon": [
+   [
+    0.7,
+    0.24
+   ],
+   [
+    0.78,
+    0.2
+   ],
+   [
+    0.76,
+    0.11
+   ],
+   [
+    0.9,
+    0.08
+   ],
+   [
+    0.96,
+    0.5
+   ],
+   [
+    0.84,
+    0.58
+   ],
+   [
+    0.66,
+    0.56
+   ],
+   [
+    0.66,
+    0.5
+   ],
+   [
+    0.64,
+    0.4
+   ],
+   [
+    0.62,
+    0.32
+   ],
+   [
+    0.64,
+    0.22
+   ]
+  ]
+ },
+ {
+  "slug": "fangorn",
+  "name": "Fangorn & Isengard",
+  "discovered": false,
+  "status": "Saruman's forges burn the forest",
+  "polygon": [
+   [
+    0.44,
+    0.5
+   ],
+   [
+    0.47,
+    0.48
+   ],
+   [
+    0.51,
+    0.47
+   ],
+   [
+    0.52,
+    0.52
+   ],
+   [
+    0.5,
+    0.57
+   ],
+   [
+    0.46,
+    0.58
+   ],
+   [
+    0.42,
+    0.58
+   ]
+  ]
+ },
+ {
+  "slug": "rohan",
+  "name": "Rohan",
+  "discovered": false,
+  "status": "Horse-lords under King Théoden",
+  "polygon": [
+   [
+    0.42,
+    0.58
+   ],
+   [
+    0.46,
+    0.58
+   ],
+   [
+    0.5,
+    0.57
+   ],
+   [
+    0.52,
+    0.52
+   ],
+   [
+    0.51,
+    0.47
+   ],
+   [
+    0.55,
+    0.47
+   ],
+   [
+    0.55,
+    0.5
+   ],
+   [
+    0.58,
+    0.56
+   ],
+   [
+    0.58,
+    0.6
+   ],
+   [
+    0.56,
+    0.62
+   ],
+   [
+    0.5,
+    0.63
+   ],
+   [
+    0.44,
+    0.63
+   ]
+  ]
+ },
+ {
+  "slug": "dead-marshes",
+  "name": "Dead Marshes & Dagorlad",
+  "discovered": false,
+  "status": "Lights of the dead beneath the water",
+  "polygon": [
+   [
+    0.58,
+    0.56
+   ],
+   [
+    0.66,
+    0.56
+   ],
+   [
+    0.7,
+    0.6
+   ],
+   [
+    0.62,
+    0.62
+   ],
+   [
+    0.6,
+    0.63
+   ],
+   [
+    0.58,
+    0.6
+   ]
+  ]
+ },
+ {
+  "slug": "gondor",
+  "name": "Gondor",
+  "discovered": false,
+  "status": "Minas Tirith braces for war",
+  "polygon": [
+   [
+    0.28,
+    0.6
+   ],
+   [
+    0.34,
+    0.6
+   ],
+   [
+    0.42,
+    0.58
+   ],
+   [
+    0.44,
+    0.63
+   ],
+   [
+    0.5,
+    0.63
+   ],
+   [
+    0.56,
+    0.62
+   ],
+   [
+    0.58,
+    0.6
+   ],
+   [
+    0.6,
+    0.63
+   ],
+   [
+    0.62,
+    0.72
+   ],
+   [
+    0.6,
+    0.82
+   ],
+   [
+    0.56,
+    0.88
+   ],
+   [
+    0.46,
+    0.88
+   ],
+   [
+    0.38,
+    0.82
+   ],
+   [
+    0.3,
+    0.8
+   ],
+   [
+    0.3,
+    0.7
+   ]
+  ]
+ },
+ {
+  "slug": "mount-doom",
+  "name": "Mount Doom",
+  "discovered": false,
+  "status": "Orodruin — the only fire that can unmake the Ring",
+  "polygon": [
+   [
+    0.65,
+    0.68
+   ],
+   [
+    0.69,
+    0.68
+   ],
+   [
+    0.7,
+    0.72
+   ],
+   [
+    0.68,
+    0.75
+   ],
+   [
+    0.65,
+    0.74
+   ],
+   [
+    0.64,
+    0.71
+   ]
+  ]
+ },
+ {
+  "slug": "mordor",
+  "name": "Mordor",
+  "discovered": false,
+  "status": "The Eye of Sauron watches",
+  "polygon": [
+   [
+    0.6,
+    0.63
+   ],
+   [
+    0.62,
+    0.62
+   ],
+   [
+    0.7,
+    0.6
+   ],
+   [
+    0.82,
+    0.62
+   ],
+   [
+    0.84,
+    0.66
+   ],
+   [
+    0.84,
+    0.82
+   ],
+   [
+    0.76,
+    0.86
+   ],
+   [
+    0.64,
+    0.84
+   ],
+   [
+    0.6,
+    0.82
+   ],
+   [
+    0.62,
+    0.72
+   ]
+  ]
+ },
+ {
+  "slug": "harad",
+  "name": "Near Harad",
+  "discovered": false,
+  "status": "Haradrim march north",
+  "polygon": [
+   [
+    0.54,
+    0.9
+   ],
+   [
+    0.58,
+    0.82
+   ],
+   [
+    0.64,
+    0.84
+   ],
+   [
+    0.76,
+    0.86
+   ],
+   [
+    0.8,
+    0.96
+   ],
+   [
+    0.5,
+    0.98
+   ]
+  ]
+ }
+]
