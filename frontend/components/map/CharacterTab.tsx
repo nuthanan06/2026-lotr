@@ -116,7 +116,7 @@ function CharacterList() {
       </ul>
       {!isLoading && !filtered.length ? (
         <p className="text-muted-foreground py-6 text-center text-xs">
-          {characters.length ? "No characters match." : "No characters yet — add them from Characters in the top bar."}
+          {characters.length ? "No characters match." : "No characters yet."}
         </p>
       ) : null}
       <SidebarPagination page={page} pageCount={pageCount} onPage={setPage} />

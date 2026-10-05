@@ -96,6 +96,8 @@ class GameStateResponse(BaseModel):
     ring_holder_id: int | None
     clock_paused: bool
     race_curve_a: dict[str, float]
+    # Secret link token for the whole-committee delegate screen.
+    screen_token: str
 
 
 class GameStateUpdate(BaseModel):
@@ -106,18 +108,29 @@ class RingHolderUpdate(BaseModel):
     character_id: int | None
 
 
-class RegionResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class RegionDiscovery(BaseModel):
+    group_id: int
+    discovered_at: datetime
+    revealed: bool
 
+
+class RegionResponse(BaseModel):
     id: int
     slug: str
     name: str
     polygon: list[list[float]]
+    # Known to any group / revealed to every group that has members.
     discovered: bool
     revealed: bool
-    revealed_at: datetime | None
+    # Per-group discovery; a group not listed hasn't found this region.
+    discoveries: list[RegionDiscovery]
     status: str | None
     notes: str | None
+
+
+class RegionDiscoveryUpdate(BaseModel):
+    group_id: int
+    discovered: bool
 
 
 class RevealResult(BaseModel):
@@ -125,6 +138,7 @@ class RevealResult(BaseModel):
 
 
 class RegionUpdate(BaseModel):
+    # Sets discovery for every group at once; use /discovery for one group.
     discovered: bool | None = None
     status: str | None = Field(default=None, max_length=255)
     notes: str | None = None
@@ -157,6 +171,8 @@ class GroupResponse(BaseModel):
     color: str
     created_at: datetime
     member_ids: list[int]
+    # Secret link token for this group's delegate screen.
+    screen_token: str
 
 
 class LastSeen(BaseModel):
@@ -173,6 +189,54 @@ class GroupViewResponse(BaseModel):
     group: GroupResponse
     member_ids: list[int]
     last_seen: list[LastSeen]
+    # Regions this group's delegates have been shown.
+    revealed_region_ids: list[int]
+
+
+# ── Delegate screens ─────────────────────────────────────────────────────────
+# What a public, token-gated delegate screen receives. Deliberately minimal:
+# no notes, corruption, groups or positions the audience shouldn't know.
+
+class ScreenCharacter(BaseModel):
+    id: int
+    name: str
+    avatar_url: str | None
+    x: float
+    y: float
+    has_ring: bool
+    army_mobilized: bool
+
+
+class ScreenLastSeen(BaseModel):
+    id: int
+    name: str
+    avatar_url: str | None
+    x: float
+    y: float
+    seen_at: datetime
+
+
+class ScreenRegion(BaseModel):
+    id: int
+    name: str
+    polygon: list[list[float]]
+    revealed: bool
+
+
+class ScreenConflict(BaseModel):
+    id: int
+    name: str
+    party_ids: list[int]
+    deadline_at: datetime | None
+
+
+class ScreenView(BaseModel):
+    title: str
+    color: str | None
+    characters: list[ScreenCharacter]
+    last_seen: list[ScreenLastSeen]
+    regions: list[ScreenRegion]
+    conflicts: list[ScreenConflict]
 
 
 # ── Conflicts ────────────────────────────────────────────────────────────────

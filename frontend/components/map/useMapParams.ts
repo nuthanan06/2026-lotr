@@ -30,6 +30,7 @@ export function useMapParams() {
     const v = params.get(key);
     return v != null && /^\d+$/.test(v) ? Number(v) : null;
   };
+  const seenBy = view === "delegate" ? num("seenBy") : null;
 
   const navigate = useCallback(
     (next: { tab: SidebarTab; character?: number | null; conflict?: number | null; region?: number | null }) => {
@@ -38,16 +39,31 @@ export function useMapParams() {
       if (next.conflict != null) q.set("conflict", String(next.conflict));
       if (next.region != null) q.set("region", String(next.region));
       if (view === "delegate") q.set("view", "delegate");
+      if (view === "delegate" && seenBy != null) q.set("seenBy", String(seenBy));
       router.push(`${pathname}?${q}`, { scroll: false });
     },
-    [router, pathname, view]
+    [router, pathname, view, seenBy]
+  );
+
+  /** Preview delegate view as one group sees it (null = whole committee). */
+  const setSeenBy = useCallback(
+    (groupId: number | null) => {
+      const q = new URLSearchParams(params.toString());
+      if (groupId != null) q.set("seenBy", String(groupId));
+      else q.delete("seenBy");
+      router.replace(`${pathname}?${q}`, { scroll: false });
+    },
+    [router, pathname, params]
   );
 
   const setView = useCallback(
     (next: MapView) => {
       const q = new URLSearchParams(params.toString());
       if (next === "delegate") q.set("view", "delegate");
-      else q.delete("view");
+      else {
+        q.delete("view");
+        q.delete("seenBy");
+      }
       router.replace(`${pathname}?${q}`, { scroll: false });
     },
     [router, pathname, params]
@@ -56,6 +72,8 @@ export function useMapParams() {
   return {
     tab,
     view,
+    seenBy,
+    setSeenBy,
     characterId: num("character"),
     conflictId: num("conflict"),
     regionId: num("region"),

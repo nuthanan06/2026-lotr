@@ -82,7 +82,7 @@ export function DirectivesTab() {
           <NoteList
             notes={archivedFiltered}
             loading={archivedLoading}
-            empty="Nothing archived yet. Finishing a crisis update moves its directives here."
+            empty="Nothing archived yet."
           />
         </div>
       </section>

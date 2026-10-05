@@ -118,7 +118,7 @@ export function EditCharacterDialog({
         <DialogContent className="rounded-[20px] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">Edit character</DialogTitle>
-            <DialogDescription>Race sets how fast the Ring corrupts them.</DialogDescription>
+            <DialogDescription className="sr-only">Edit name, race and portrait.</DialogDescription>
           </DialogHeader>
           <form
             className="space-y-3"

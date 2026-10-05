@@ -82,6 +82,8 @@ export interface GameState {
   ring_holder_id: number | null;
   clock_paused: boolean;
   race_curve_a: Record<string, number>;
+  /** Secret link token for the whole-committee delegate screen. */
+  screen_token: string;
 }
 
 export interface RegionResponse {
@@ -89,11 +91,20 @@ export interface RegionResponse {
   slug: string;
   name: string;
   polygon: [number, number][];
+  /** Known to at least one group. */
   discovered: boolean;
+  /** Shown to every group that has members (safe for a whole-committee screen). */
   revealed: boolean;
-  revealed_at: string | null;
+  /** Per-group discovery; a group not listed hasn't found this region. */
+  discoveries: RegionDiscovery[];
   status: string | null;
   notes: string | null;
+}
+
+export interface RegionDiscovery {
+  group_id: number;
+  discovered_at: string;
+  revealed: boolean;
 }
 
 export interface RegionUpdate {
@@ -137,6 +148,8 @@ export interface GroupResponse {
   color: string;
   created_at: string;
   member_ids: number[];
+  /** Secret link token for this group's delegate screen. */
+  screen_token: string;
 }
 
 export interface GroupCreate {
@@ -152,10 +165,23 @@ export interface LastSeen {
   seen_at: string;
 }
 
+// ── Delegate screens (public, token-gated, read-only) ───────────────────────
+
+export interface ScreenView {
+  title: string;
+  color: string | null;
+  characters: { id: number; name: string; avatar_url: string | null; x: number; y: number; has_ring: boolean; army_mobilized: boolean }[];
+  last_seen: { id: number; name: string; avatar_url: string | null; x: number; y: number; seen_at: string }[];
+  regions: { id: number; name: string; polygon: [number, number][]; revealed: boolean }[];
+  conflicts: { id: number; name: string; party_ids: number[]; deadline_at: string | null }[];
+}
+
 export interface GroupView {
   group: GroupResponse;
   member_ids: number[];
   last_seen: LastSeen[];
+  /** Regions this group's delegates have been shown. */
+  revealed_region_ids: number[];
 }
 
 export interface ConflictResolve {

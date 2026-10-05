@@ -11,8 +11,8 @@ export function Navbar() {
   const [charOpen, setCharOpen] = useState(false);
   const pathname = usePathname();
 
-  // The map is full-screen; its sidebar carries its own navigation.
-  if (pathname.startsWith("/map")) return null;
+  // The map and delegate screens are full-screen and carry their own navigation.
+  if (pathname.startsWith("/map") || pathname.startsWith("/screen")) return null;
 
   return (
     <>

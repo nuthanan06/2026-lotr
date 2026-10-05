@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExternalLinkIcon, MonitorIcon, PlusIcon } from "lucide-react";
+import { CopyIcon, MonitorIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -34,9 +35,11 @@ import {
 import {
   useCreateGroup,
   useDeleteGroup,
+  useGameState,
   useGroups,
   useMapCharacters,
   useMoveToGroup,
+  useRotateScreenLink,
   useUpdateGroup,
 } from "@/hooks/useMap";
 import { cn } from "@/lib/utils";
@@ -48,8 +51,66 @@ import { useMapParams } from "./useMapParams";
 // Distinct on the parchment map and from each other.
 export const GROUP_COLORS = ["#d08700", "#7a3b3b", "#2f6f4f", "#3f5f9a", "#7b4f9d", "#b5582a", "#2b7a8a", "#5a5a5a"];
 
-export function screenUrl(groupId?: number) {
-  return groupId != null ? `/map/screen?group=${groupId}` : "/map/screen";
+/** Secret, login-free delegate screen link (rotatable). */
+export function screenUrl(token: string) {
+  return `/screen/${token}`;
+}
+
+/** Open / copy / replace a delegate screen link. */
+function ScreenLinkButtons({ token, groupId }: { token: string | undefined; groupId: number | null }) {
+  const { mutate: rotate, isPending } = useRotateScreenLink();
+  const [confirm, setConfirm] = useState(false);
+  if (!token) return null;
+  const url = screenUrl(token);
+  return (
+    <>
+      <Button variant="outline" size="sm" className="bg-background h-7" asChild>
+        <a href={url} target="_blank" rel="noreferrer">
+          <MonitorIcon />
+          Screen
+        </a>
+      </Button>
+      <Button
+        variant="outline"
+        size="icon-sm"
+        className="bg-background size-7"
+        aria-label="Copy screen link"
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(new URL(url, window.location.origin).toString());
+            toast.success("Screen link copied.");
+          } catch {
+            toast.error("Couldn't copy the link.");
+          }
+        }}
+      >
+        <CopyIcon />
+      </Button>
+      <Button
+        variant="outline"
+        size="icon-sm"
+        className="bg-background size-7"
+        aria-label="Make a new screen link"
+        onClick={() => setConfirm(true)}
+      >
+        <RefreshCwIcon />
+      </Button>
+      <AlertDialog open={confirm} onOpenChange={setConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Make a new screen link?</AlertDialogTitle>
+            <AlertDialogDescription>The current link stops working on every device.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={isPending} onClick={() => rotate(groupId)}>
+              New link
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
 }
 
 /**
@@ -60,6 +121,7 @@ export function screenUrl(groupId?: number) {
 export function GroupsTab() {
   const { data: groups = [] } = useGroups();
   const { data: characters = [] } = useMapCharacters();
+  const { data: game } = useGameState();
   const [creating, setCreating] = useState(false);
   const ungrouped = characters.filter((c) => c.group_id == null);
 
@@ -71,9 +133,6 @@ export function GroupsTab() {
           Split off a group
         </Button>
       </SectionHeading>
-      <p className="text-muted-foreground -mt-3 text-xs">
-        Each group&apos;s screen shows its own members live, and everyone else where the group last saw them.
-      </p>
 
       <ul className="space-y-3">
         {groups.map((g, i) => (
@@ -89,13 +148,10 @@ export function GroupsTab() {
         </p>
       ) : null}
 
-      <Button variant="outline" className="w-full" asChild>
-        <a href={screenUrl()} target="_blank" rel="noreferrer">
-          <MonitorIcon />
-          Open whole-committee delegate screen
-          <ExternalLinkIcon className="ml-auto" />
-        </a>
-      </Button>
+      <div className="flex items-center gap-1.5 rounded-lg border px-3 py-2">
+        <span className="flex-1 text-sm font-medium">Whole committee</span>
+        <ScreenLinkButtons token={game?.screen_token} groupId={null} />
+      </div>
 
       <CreateGroupDialog open={creating} onOpenChange={setCreating} usedColors={groups.map((g) => g.color)} />
     </div>
@@ -137,6 +193,17 @@ function GroupCard({
         />
         {ringHere ? <Tag tone="orange">Ring-bearers</Tag> : null}
         <span className="text-muted-foreground text-xs">{members.length}</span>
+        {!isStarting ? (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="text-muted-foreground hover:text-destructive"
+            aria-label={`Disband ${group.name}`}
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2Icon />
+          </Button>
+        ) : null}
       </div>
 
       <div className="border-t px-3 py-2.5">
@@ -173,17 +240,7 @@ function GroupCard({
             ))}
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" className="bg-background h-7" asChild>
-          <a href={screenUrl(group.id)} target="_blank" rel="noreferrer">
-            <MonitorIcon />
-            Screen
-          </a>
-        </Button>
-        {!isStarting ? (
-          <Button variant="ghost" size="sm" className="text-destructive h-7" onClick={() => setConfirmDelete(true)}>
-            Disband
-          </Button>
-        ) : null}
+        <ScreenLinkButtons token={group.screen_token} groupId={group.id} />
       </div>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
@@ -257,10 +314,7 @@ function CreateGroupDialog({
       <DialogContent className="rounded-[20px] sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Split off a group</DialogTitle>
-          <DialogDescription>
-            Members leave their current group now. From here on, each group only sees where the others were when
-            they parted.
-          </DialogDescription>
+          <DialogDescription className="sr-only">Name the group, pick a colour and its members.</DialogDescription>
         </DialogHeader>
         <form
           className="space-y-3"

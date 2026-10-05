@@ -9,9 +9,9 @@ import { CloudFogIcon, EyeIcon, MapIcon, SparklesIcon } from "lucide-react";
 import { ImageOverlay, MapContainer, Marker, Pane, Polygon, Polyline, Tooltip, useMap } from "react-leaflet";
 
 import { useConflicts, useGroupView, useGroups, useMapCharacters, useRegions } from "@/hooks/useMap";
-import { MAP_IMAGE, centroid, fromLatLng, toLatLng, type MapPoint } from "@/lib/mapGeo";
+import { MAP_IMAGE, centroid, fromLatLng, hasPendingReveal, toLatLng, type MapPoint } from "@/lib/mapGeo";
 import { cn } from "@/lib/utils";
-import type { ConflictResponse, MapCharacter, RegionResponse } from "@/types/api";
+import type { ConflictResponse, GroupView, MapCharacter, RegionResponse } from "@/types/api";
 import { avatarColor, initials } from "./parts";
 import { useMapFocus, useOptionalMapActions } from "./MapActions";
 import { useMapParams, type MapView } from "./useMapParams";
@@ -246,12 +246,15 @@ function RegionHitArea({
  */
 function FogLayer({
   regions,
+  hidden,
   onRevealed,
 }: {
   regions: RegionResponse[];
+  /** Region ids the viewers haven't been shown. */
+  hidden: Set<number>;
   onRevealed: (names: string[]) => void;
 }) {
-  const fogged = useMemo(() => regions.filter((r) => !r.revealed), [regions]);
+  const fogged = useMemo(() => regions.filter((r) => hidden.has(r.id)), [regions, hidden]);
   const previous = useRef<Map<number, RegionResponse> | null>(null);
   const [fading, setFading] = useState<RegionResponse[]>([]);
 
@@ -359,6 +362,15 @@ function ViewToggle({ view, onChange }: { view: MapView; onChange: (view: MapVie
   );
 }
 
+/** Preloaded data for public delegate screens (instead of the staff API). */
+export interface MapSource {
+  characters: MapCharacter[];
+  regions: RegionResponse[];
+  conflicts: ConflictResponse[];
+  /** Set for a group's screen: its members, last-seen others and reveals. */
+  groupView: GroupView | null;
+}
+
 export default function MapCanvas({
   selectedRegionId,
   view,
@@ -366,6 +378,7 @@ export default function MapCanvas({
   readOnly = false,
   onViewChange,
   overlay,
+  source,
 }: {
   selectedRegionId: number | null;
   view: MapView;
@@ -376,12 +389,18 @@ export default function MapCanvas({
   onViewChange?: (view: MapView) => void;
   /** Extra chips under the top-left controls (e.g. the group name). */
   overlay?: React.ReactNode;
+  source?: MapSource;
 }) {
-  const { data: characters = [] } = useMapCharacters();
-  const { data: regions = [] } = useRegions();
-  const { data: conflicts = [] } = useConflicts();
-  const { data: groups = [] } = useGroups();
-  const { data: groupView } = useGroupView(groupId);
+  const staff = !source;
+  const charactersQ = useMapCharacters(staff);
+  const regionsQ = useRegions(staff);
+  const conflictsQ = useConflicts(staff);
+  const { data: groups = [] } = useGroups(staff);
+  const groupViewQ = useGroupView(staff ? groupId : null);
+  const characters = source?.characters ?? charactersQ.data ?? [];
+  const regions = source?.regions ?? regionsQ.data ?? [];
+  const conflicts = source?.conflicts ?? conflictsQ.data ?? [];
+  const groupView = source ? source.groupView : groupViewQ.data;
   const [map, setMap] = useState<L.Map | null>(null);
   const [hovered, setHovered] = useState<RegionResponse | null>(null);
   const [revealedNames, setRevealedNames] = useState<string[]>([]);
@@ -392,10 +411,24 @@ export default function MapCanvas({
     return () => clearTimeout(t);
   }, [revealedNames]);
 
-  const delegate = view === "delegate" || groupId != null;
+  const delegate = view === "delegate" || groupId != null || !!source;
   const groupColor = useMemo(() => new Map(groups.map((g) => [g.id, g.color])), [groups]);
-  const hiddenRegionIds = useMemo(() => new Set(regions.filter((r) => !r.revealed).map((r) => r.id)), [regions]);
-  const pending = regions.filter((r) => r.discovered && !r.revealed);
+  // Fog is per audience: a group's screen uses that group's own reveals; the
+  // whole-committee view only shows lands every group has been shown.
+  const revealedToGroup = useMemo(
+    () => (groupView ? new Set(groupView.revealed_region_ids) : null),
+    [groupView]
+  );
+  const hiddenRegionIds = useMemo(
+    () =>
+      new Set(
+        regions.filter((r) => (revealedToGroup ? !revealedToGroup.has(r.id) : !r.revealed)).map((r) => r.id)
+      ),
+    [regions, revealedToGroup]
+  );
+  // Don't draw (or animate) fog until we know whose fog it is.
+  const fogReady = regions.length > 0 && (!!source || groupId == null || !!groupView);
+  const pending = regions.filter(hasPendingReveal);
 
   // Who is drawn, and where.
   const members = groupView ? new Set(groupView.member_ids) : null;
@@ -438,7 +471,7 @@ export default function MapCanvas({
         <ImageOverlay url={MAP_IMAGE.src} bounds={IMAGE_BOUNDS} />
 
         {delegate ? (
-          <FogLayer regions={regions} onRevealed={setRevealedNames} />
+          fogReady ? <FogLayer regions={regions} hidden={hiddenRegionIds} onRevealed={setRevealedNames} /> : null
         ) : (
           <>
             {regions
@@ -496,21 +529,26 @@ export default function MapCanvas({
         {delegate && !readOnly ? (
           <p className="bg-background/90 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs shadow-sm">
             <CloudFogIcon className="size-3.5" />
-            Showing what delegates have been shown · {hiddenRegionIds.size} of {regions.length} regions hidden
+            {hiddenRegionIds.size} of {regions.length} regions hidden
           </p>
         ) : null}
         {!delegate && pending.length ? (
           <p className="bg-background/90 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs shadow-sm">
             <SparklesIcon className="text-primary size-3.5" />
-            {pending.length} discovered region{pending.length === 1 ? "" : "s"} will be revealed at the next crisis
-            update
+            {pending.length} to reveal
           </p>
         ) : null}
         {hovered ? (
           <p className="bg-background/90 rounded-md px-2.5 py-1 text-xs font-medium shadow-sm">
             {hovered.name}
             <span className="text-muted-foreground font-normal">
-              {!hovered.discovered ? " · undiscovered" : !hovered.revealed ? " · reveals next update" : ""}
+              {!hovered.discovered
+                ? " · undiscovered"
+                : hasPendingReveal(hovered)
+                  ? " · reveals next update"
+                  : hovered.revealed
+                    ? ""
+                    : ` · known to ${hovered.discoveries.length} of ${groups.length} groups`}
             </span>
           </p>
         ) : null}

@@ -24,6 +24,7 @@ from app.schemas import (
 from app.services import corruption
 from app.services.game import load_game_state
 from app.services.geo import region_at
+from app.services.discovery import set_discovered
 from app.services.groups import assign, default_group
 from app.services.notes import active_period
 
@@ -153,7 +154,13 @@ def move_character(
     from_region = region_at(regions, character.x, character.y)
     to_region = region_at(regions, body.x, body.y)
     if body.discover_region and to_region is not None:
-        to_region.discovered = True
+        # Discovered by the mover's own group only; other groups stay in the dark.
+        group_id = character.group_id
+        if group_id is None:
+            fallback = default_group(db)
+            group_id = fallback.id if fallback else None
+        if group_id is not None:
+            set_discovered(db, to_region.id, group_id, True)
 
     db.add(
         Movement(

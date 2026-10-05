@@ -25,8 +25,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useNotes } from "@/hooks/useCrisisNotes";
 import { useActivePeriod } from "@/hooks/useCrisisPeriods";
-import { useMoveCharacter, useRegions } from "@/hooks/useMap";
-import { regionAt, type MapPoint } from "@/lib/mapGeo";
+import { useGroups, useMoveCharacter, useRegions } from "@/hooks/useMap";
+import { knownTo, regionAt, type MapPoint } from "@/lib/mapGeo";
 import type { MapCharacter, MoveRequest, Priority } from "@/types/api";
 
 export interface MoveRequestState {
@@ -48,6 +48,7 @@ export function MoveCharacterDialog({
   onClose: () => void;
 }) {
   const { data: regions = [] } = useRegions();
+  const { data: groups = [] } = useGroups();
   const { data: period } = useActivePeriod();
   const character = request?.character;
   const { data: notes = [] } = useNotes(
@@ -78,6 +79,9 @@ export function MoveCharacterDialog({
     [regions, request]
   );
 
+  const moverGroup = groups.find((g) => g.id === request?.character.group_id);
+  // Discovery is per group: new to the mover's group even if others found it.
+  const knownToMover = !!destination && knownTo(destination, request?.character.group_id);
   const noteValid = mode === "existing" ? !!noteId : !!period && !!title.trim() && !!description.trim();
 
   function cancel() {
@@ -99,7 +103,7 @@ export function MoveCharacterDialog({
 
   function next() {
     if (!noteValid) return;
-    if (destination && !destination.discovered) setStep("discover");
+    if (destination && !knownToMover) setStep("discover");
     else submit(false);
   }
 
@@ -113,14 +117,11 @@ export function MoveCharacterDialog({
                 <DialogTitle className="text-2xl font-bold">Move {request.character.name}</DialogTitle>
                 <DialogDescription className="flex flex-wrap items-center gap-1.5">
                   To {destination?.name ?? "uncharted lands"}
-                  {destination && !destination.discovered ? (
-                    <Badge variant="secondary">Undiscovered</Badge>
+                  {destination && !knownToMover ? (
+                    <Badge variant="secondary">New to {moverGroup?.name ?? "them"}</Badge>
                   ) : null}
                 </DialogDescription>
               </DialogHeader>
-              <p className="text-muted-foreground text-xs">
-                A move must cite the crisis note or directive that authorised it.
-              </p>
               <ToggleGroup
                 type="single"
                 variant="outline"
@@ -218,8 +219,7 @@ export function MoveCharacterDialog({
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold">Discover {destination?.name}?</DialogTitle>
                 <DialogDescription>
-                  {request.character.name} is entering a region that hasn&apos;t been discovered yet. Marking it
-                  discovered lifts the fog for delegates at the next crisis update.
+                  New to {moverGroup?.name ?? "this group"}. Revealed at the next crisis update.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="sm:justify-between">

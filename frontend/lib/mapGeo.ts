@@ -33,6 +33,16 @@ function area(polygon: [number, number][]): number {
   return Math.abs(sum) / 2;
 }
 
+/** Whether a group has found this region (pending reveal or not). */
+export function knownTo(region: RegionResponse, groupId: number | null | undefined) {
+  return region.discoveries.some((d) => d.group_id === groupId);
+}
+
+/** Some group has found it but it isn't shown to them yet. */
+export function hasPendingReveal(region: RegionResponse) {
+  return region.discoveries.some((d) => !d.revealed);
+}
+
 /** The region containing the point; the smallest wins where outlines nest. */
 export function regionAt(regions: RegionResponse[], point: MapPoint): RegionResponse | null {
   let best: RegionResponse | null = null;

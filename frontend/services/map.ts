@@ -16,6 +16,7 @@ import type {
 export const gameService = {
   get: () => apiClient.get<GameState>("/api/game"),
   setClockPaused: (clock_paused: boolean) => apiClient.patch<GameState>("/api/game", { clock_paused }),
+  rotateScreenToken: () => apiClient.post<GameState>("/api/game/screen-token", {}),
   setRingHolder: (character_id: number | null) =>
     apiClient.put<GameState>("/api/game/ring", { character_id }),
 };
@@ -24,6 +25,8 @@ export const regionsService = {
   list: () => apiClient.get<RegionResponse[]>("/api/regions"),
   update: (id: number, body: RegionUpdate) =>
     apiClient.patch<RegionResponse>(`/api/regions/${id}`, body),
+  setDiscovery: (id: number, group_id: number, discovered: boolean) =>
+    apiClient.put<RegionResponse>(`/api/regions/${id}/discovery`, { group_id, discovered }),
   revealDiscovered: () => apiClient.post<{ revealed: number[] }>("/api/regions/reveal", {}),
 };
 
@@ -35,6 +38,7 @@ export const groupsService = {
   addMembers: (id: number, character_ids: number[]) =>
     apiClient.post<GroupResponse>(`/api/groups/${id}/members`, { character_ids }),
   delete: (id: number) => apiClient.delete<void>(`/api/groups/${id}`),
+  rotateScreenToken: (id: number) => apiClient.post<GroupResponse>(`/api/groups/${id}/screen-token`, {}),
   view: (id: number) => apiClient.get<GroupView>(`/api/groups/${id}/view`),
 };
 

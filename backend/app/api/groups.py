@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
-from app.models.map import Group
+from app.models.map import Group, GroupRegion, new_screen_token
 from app.schemas import (
     GroupCreate,
     GroupMembersUpdate,
@@ -12,6 +12,7 @@ from app.schemas import (
     GroupUpdate,
     GroupViewResponse,
 )
+from app.services.discovery import share_knowledge
 from app.services.groups import assign, default_group, last_seen
 from app.services.notes import require_characters
 
@@ -25,6 +26,7 @@ def _response(group: Group) -> GroupResponse:
         color=group.color,
         created_at=group.created_at,
         member_ids=[c.id for c in group.members],
+        screen_token=group.screen_token,
     )
 
 
@@ -46,7 +48,10 @@ def create_group(body: GroupCreate, db: Session = Depends(get_db)) -> GroupRespo
     group = Group(name=body.name, color=body.color)
     db.add(group)
     db.flush()
-    for character in require_characters(db, body.member_ids):
+    members = require_characters(db, body.member_ids)
+    # The new group knows every land its members' old groups knew.
+    share_knowledge(db, [c.group_id for c in members], group.id)
+    for character in members:
         assign(db, character, group.id)
     db.commit()
     db.refresh(group)
@@ -69,8 +74,21 @@ def add_members(
     group_id: int, body: GroupMembersUpdate, db: Session = Depends(get_db)
 ) -> GroupResponse:
     group = _get_group(db, group_id)
-    for character in require_characters(db, body.character_ids):
+    characters = require_characters(db, body.character_ids)
+    # Newcomers bring what their old group had found.
+    share_knowledge(db, [c.group_id for c in characters], group.id)
+    for character in characters:
         assign(db, character, group.id)
+    db.commit()
+    db.refresh(group)
+    return _response(group)
+
+
+@router.post("/{group_id}/screen-token", response_model=GroupResponse)
+def rotate_screen_token(group_id: int, db: Session = Depends(get_db)) -> GroupResponse:
+    """New link for this group's screen; the old one stops working."""
+    group = _get_group(db, group_id)
+    group.screen_token = new_screen_token()
     db.commit()
     db.refresh(group)
     return _response(group)
@@ -84,7 +102,9 @@ def delete_group(group_id: int, db: Session = Depends(get_db)) -> None:
         raise HTTPException(
             status_code=409, detail="The starting group can't be deleted; rename it instead."
         )
-    # Members rejoin the starting group rather than becoming groupless.
+    # Members rejoin the starting group (bringing what they found) rather
+    # than becoming groupless.
+    share_knowledge(db, [group.id], fallback.id)
     for character in list(group.members):
         assign(db, character, fallback.id)
     # Reload the (now empty) member list so deleting the group doesn't null
@@ -102,4 +122,10 @@ def group_view(group_id: int, db: Session = Depends(get_db)) -> GroupViewRespons
         group=_response(group),
         member_ids=[c.id for c in group.members],
         last_seen=last_seen(db, group),
+        revealed_region_ids=[
+            r.region_id
+            for r in db.query(GroupRegion).filter(
+                GroupRegion.group_id == group.id, GroupRegion.revealed_at.isnot(None)
+            )
+        ],
     )

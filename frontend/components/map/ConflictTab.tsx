@@ -125,7 +125,7 @@ function ConflictLists() {
         title="Ongoing Conflicts"
         conflicts={conflicts.filter((k) => k.status === "ONGOING")}
         pageSize={4}
-        empty="No battles raging — for now."
+        empty="No ongoing conflicts."
         action={
           <Button className={cn(solidButton, "w-[77px]")} onClick={() => openCreateConflict()}>
             Create

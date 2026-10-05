@@ -10,6 +10,7 @@ from app.api.game import router as game_router
 from app.api.groups import router as groups_router
 from app.api.health import router as health_router
 from app.api.regions import router as regions_router
+from app.api.screens import router as screens_router
 from app.api.staff_notes import router as staff_notes_router
 from app.auth import require_admin_token
 
@@ -23,3 +24,4 @@ api_router.include_router(game_router)
 api_router.include_router(regions_router)
 api_router.include_router(conflicts_router)
 api_router.include_router(groups_router)
+api_router.include_router(screens_router)

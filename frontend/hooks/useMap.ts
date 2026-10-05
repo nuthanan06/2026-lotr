@@ -19,11 +19,12 @@ import type {
 // converges within a few seconds without a websocket layer.
 const LIVE = { refetchInterval: 5000 } as const;
 
-export function useMapCharacters() {
+export function useMapCharacters(enabled = true) {
   return useQuery({
     queryKey: ["characters"],
     queryFn: () => charactersService.list(),
     ...LIVE,
+    enabled,
   });
 }
 
@@ -31,12 +32,12 @@ export function useGameState() {
   return useQuery({ queryKey: ["game"], queryFn: () => gameService.get(), ...LIVE });
 }
 
-export function useRegions() {
-  return useQuery({ queryKey: ["regions"], queryFn: () => regionsService.list(), ...LIVE });
+export function useRegions(enabled = true) {
+  return useQuery({ queryKey: ["regions"], queryFn: () => regionsService.list(), ...LIVE, enabled });
 }
 
-export function useConflicts() {
-  return useQuery({ queryKey: ["conflicts"], queryFn: () => conflictsService.list(), ...LIVE });
+export function useConflicts(enabled = true) {
+  return useQuery({ queryKey: ["conflicts"], queryFn: () => conflictsService.list(), ...LIVE, enabled });
 }
 
 export function useMovements(characterId: number | null) {
@@ -149,12 +150,22 @@ export function useUpdateConflict() {
   });
 }
 
+export function useSetRegionDiscovery() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ id, groupId, discovered }: { id: number; groupId: number; discovered: boolean }) =>
+      regionsService.setDiscovery(id, groupId, discovered),
+    onSuccess: () => invalidate("regions", "groups"),
+    onError: (err: Error) => toast.error(err.message || "Failed to update discovery."),
+  });
+}
+
 export function useRevealDiscovered() {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: () => regionsService.revealDiscovered(),
     onSuccess: ({ revealed }) => {
-      invalidate("regions");
+      invalidate("regions", "groups");
       toast.success(
         revealed.length ? `Revealed ${revealed.length} region${revealed.length === 1 ? "" : "s"} to delegates.` : "Nothing new to reveal."
       );
@@ -163,8 +174,8 @@ export function useRevealDiscovered() {
   });
 }
 
-export function useGroups() {
-  return useQuery({ queryKey: ["groups"], queryFn: () => groupsService.list(), ...LIVE });
+export function useGroups(enabled = true) {
+  return useQuery({ queryKey: ["groups"], queryFn: () => groupsService.list(), ...LIVE, enabled });
 }
 
 export function useGroupView(groupId: number | null) {
@@ -217,5 +228,20 @@ export function useDeleteGroup() {
       toast.success("Group disbanded; its members rejoined the starting group.");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to delete group."),
+  });
+}
+
+export function useRotateScreenLink() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: async (groupId: number | null): Promise<void> => {
+      if (groupId == null) await gameService.rotateScreenToken();
+      else await groupsService.rotateScreenToken(groupId);
+    },
+    onSuccess: () => {
+      invalidate("groups", "game");
+      toast.success("New screen link made. The old link no longer works.");
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to make a new link."),
   });
 }

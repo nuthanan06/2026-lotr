@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.crisis_note import Character
-from app.models.map import GameState
+from app.models.map import GameState, new_screen_token
 from app.schemas import GameStateResponse, GameStateUpdate, RingHolderUpdate
 from app.services import corruption
 from app.services.game import load_game_state
@@ -18,6 +18,7 @@ def _response(game: GameState) -> GameStateResponse:
         ring_holder_id=game.ring_holder_id,
         clock_paused=game.clock_paused,
         race_curve_a=corruption.RACE_CURVE_A,
+        screen_token=game.screen_token,
     )
 
 
@@ -42,6 +43,15 @@ def update_game_state(body: GameStateUpdate, db: Session = Depends(get_db)) -> G
         # Bank corruption accrued so far, then switch the rate on/off from now.
         _snapshot_holder(db, game)
         game.clock_paused = body.clock_paused
+    db.commit()
+    return _response(game)
+
+
+@router.post("/screen-token", response_model=GameStateResponse)
+def rotate_screen_token(db: Session = Depends(get_db)) -> GameStateResponse:
+    """New link for the whole-committee screen; the old one stops working."""
+    game = load_game_state(db)
+    game.screen_token = new_screen_token()
     db.commit()
     return _response(game)
 

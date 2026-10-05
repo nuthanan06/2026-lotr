@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import uuid
 from datetime import datetime
 
 from sqlalchemy import (
@@ -21,6 +22,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 from app.models.crisis_note import Character, CrisisNote
+
+
+def new_screen_token() -> str:
+    return uuid.uuid4().hex
 
 
 class ConflictStatus(str, enum.Enum):
@@ -47,6 +52,10 @@ class GameState(Base):
     clock_paused: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false")
     )
+    # Secret link for the whole-committee delegate screen (see Group.screen_token).
+    screen_token: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True, default=new_screen_token
+    )
 
     ring_holder: Mapped[Character | None] = relationship("Character")
 
@@ -60,15 +69,6 @@ class Region(Base):
     # Outline as [[x, y], ...] in the same 0–1 map-fraction space as
     # Character.x / Character.y.
     polygon: Mapped[list[list[float]]] = mapped_column(JSON, nullable=False)
-    # Staff mark regions discovered during a round; delegates only see them
-    # once revealed, which happens when a crisis update is published.
-    discovered: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default=text("false")
-    )
-    revealed: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default=text("false")
-    )
-    revealed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -151,6 +151,12 @@ class Group(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     color: Mapped[str] = mapped_column(String(16), nullable=False)
+    # Unguessable id for this group's delegate screen (/screen/<token>). The
+    # screen needs no staff login, so the token is what keeps one group from
+    # opening another's view; staff can rotate it.
+    screen_token: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True, default=new_screen_token
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -175,3 +181,22 @@ class GroupMembership(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class GroupRegion(Base):
+    """A region one group has discovered. Discovery is per group: lands one
+    party finds stay fogged for the others. Delegates only see it once
+    revealed (when a crisis update is published)."""
+
+    __tablename__ = "group_regions"
+
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("groups.id", ondelete="CASCADE"), primary_key=True
+    )
+    region_id: Mapped[int] = mapped_column(
+        ForeignKey("regions.id", ondelete="CASCADE"), primary_key=True
+    )
+    discovered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    revealed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

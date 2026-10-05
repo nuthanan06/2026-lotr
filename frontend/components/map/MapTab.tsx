@@ -17,12 +17,15 @@ import {
 import { Switch } from "@/components/ui/switch";
 import {
   useGameState,
+  useGroups,
   useMapCharacters,
   useRegions,
   useRevealDiscovered,
   useSetClockPaused,
+  useSetRegionDiscovery,
   useUpdateRegion,
 } from "@/hooks/useMap";
+import { hasPendingReveal } from "@/lib/mapGeo";
 import type { RegionResponse } from "@/types/api";
 import { useMapActions } from "./MapActions";
 import { CharacterAvatar, SectionHeading } from "./parts";
@@ -93,7 +96,7 @@ export function MapTab() {
   const { requestRingHolder } = useMapActions();
   const { mutate: setClockPaused } = useSetClockPaused();
   const { mutate: reveal, isPending: revealing } = useRevealDiscovered();
-  const pending = regions.filter((r) => r.discovered && !r.revealed);
+  const pending = regions.filter(hasPendingReveal);
 
   return (
     <div className="space-y-7">
@@ -132,7 +135,7 @@ export function MapTab() {
       <section>
         <SectionHeading title="Actions" />
         <div className="mt-3 divide-y rounded-lg border">
-          <SettingRow label="Ring holder" hint="Their corruption rises over time." htmlFor="ring-holder">
+          <SettingRow label="Ring holder" htmlFor="ring-holder">
             <Select
               value={game?.ring_holder_id != null ? String(game.ring_holder_id) : NOBODY}
               onValueChange={(v) => requestRingHolder(v === NOBODY ? null : Number(v))}
@@ -152,18 +155,14 @@ export function MapTab() {
           </SettingRow>
           <SettingRow
             label="Reveal to delegates"
-            hint={
-              pending.length
-                ? `${pending.length} discovered region${pending.length === 1 ? "" : "s"} waiting. Also happens on Finish.`
-                : "Nothing waiting. Finishing a crisis update reveals new finds."
-            }
+            hint={pending.length ? `${pending.length} waiting` : undefined}
           >
             <Button size="sm" disabled={!pending.length || revealing} onClick={() => reveal()}>
               <SparklesIcon />
               Reveal now
             </Button>
           </SettingRow>
-          <SettingRow label="Corruption clock" hint="Pause between committee sessions." htmlFor="corruption-clock">
+          <SettingRow label="Corruption clock" htmlFor="corruption-clock">
             <Switch
               id="corruption-clock"
               checked={!game?.clock_paused}
@@ -179,7 +178,7 @@ export function MapTab() {
       ) : (
         <div className="text-muted-foreground flex items-center gap-3 rounded-lg border border-dashed px-4 py-5 text-xs">
           <MousePointerClickIcon className="size-5 shrink-0" />
-          Click a region on the map to see who is there and its condition.
+          Select a region
         </div>
       )}
     </div>
@@ -189,6 +188,9 @@ export function MapTab() {
 function RegionPanel({ region }: { region: RegionResponse }) {
   const { data: characters = [] } = useMapCharacters();
   const { mutate } = useUpdateRegion();
+  const { mutate: setDiscovery } = useSetRegionDiscovery();
+  const { data: groups = [] } = useGroups();
+  const allKnow = groups.length > 0 && groups.every((g) => region.discoveries.some((d) => d.group_id === g.id));
   const { navigate } = useMapParams();
   const [status, setStatus] = useState(region.status ?? "");
   useEffect(() => setStatus(region.status ?? ""), [region.status]);
@@ -203,28 +205,49 @@ function RegionPanel({ region }: { region: RegionResponse }) {
   return (
     <section>
       <SectionHeading title={region.name}>
-        <Badge variant={region.revealed ? "secondary" : "outline"}>
-          {region.revealed ? "Revealed" : region.discovered ? "Reveals next update" : "Undiscovered"}
+        <Badge variant={region.discovered ? "secondary" : "outline"}>
+          {region.discovered
+            ? `Known to ${region.discoveries.length} of ${groups.length} group${groups.length === 1 ? "" : "s"}`
+            : "Undiscovered"}
         </Badge>
       </SectionHeading>
       <div className="mt-3 divide-y rounded-lg border">
-        <SettingRow
-          label="Discovered"
-          hint={
-            region.revealed
-              ? "Delegates can see this region."
-              : region.discovered
-                ? "Delegates see it at the next crisis update."
-                : "Hidden from delegates."
-          }
-          htmlFor="region-discovered"
-        >
-          <Switch
-            id="region-discovered"
-            checked={region.discovered}
-            onCheckedChange={(discovered) => mutate({ id: region.id, body: { discovered } })}
-          />
-        </SettingRow>
+        <div className="px-3.5 py-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-sm font-medium">Discovered by</p>
+            {groups.length > 1 ? (
+              <button
+                type="button"
+                className="text-primary text-xs hover:underline"
+                onClick={() => mutate({ id: region.id, body: { discovered: !allKnow } })}
+              >
+                {allKnow ? "Hide from all" : "All groups"}
+              </button>
+            ) : null}
+          </div>
+          <ul className="mt-2 space-y-1.5">
+            {groups.map((g) => {
+              const d = region.discoveries.find((x) => x.group_id === g.id);
+              return (
+                <li key={g.id} className="flex items-center gap-2 text-sm">
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: g.color }} />
+                  <span className="min-w-0 flex-1 truncate">{g.name}</span>
+                  <span className="text-muted-foreground text-[11px]">
+                    {d ? (d.revealed ? "Revealed" : "Reveals next update") : "Not found"}
+                  </span>
+                  <Switch
+                    size="sm"
+                    checked={!!d}
+                    aria-label={`Discovered by ${g.name}`}
+                    onCheckedChange={(discovered) =>
+                      setDiscovery({ id: region.id, groupId: g.id, discovered })
+                    }
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
         <div className="space-y-1.5 px-3.5 py-3">
           <Label htmlFor="region-status" className="text-sm font-medium">
             Condition

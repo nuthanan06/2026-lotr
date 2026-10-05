@@ -65,9 +65,7 @@ export function CreateConflictDialog({
       <DialogContent className="rounded-[20px] sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Create Conflict</DialogTitle>
-          <DialogDescription>
-            Every party is flagged “in conflict” and the start is logged in each of their notes.
-          </DialogDescription>
+          <DialogDescription className="sr-only">Name the conflict and pick its parties.</DialogDescription>
         </DialogHeader>
         <form
           className="space-y-3"
@@ -118,9 +116,6 @@ export function CreateConflictDialog({
               Timed crisis
             </Label>
             <TimerSelect id="conflict-timer" value={timer} onChange={setTimer} />
-            <p className="text-muted-foreground text-[11px]">
-              Staff get a popup if it&apos;s still unresolved when the timer runs out.
-            </p>
           </div>
           {!period ? (
             <p className="text-destructive text-xs">
@@ -169,9 +164,7 @@ export function ResolveConflictDialog({
         <DialogContent className="rounded-[20px] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">Resolve {conflict.name}</DialogTitle>
-            <DialogDescription>
-              The outcome is pushed to the crisis notes of every party.
-            </DialogDescription>
+            <DialogDescription className="sr-only">Pick a winner and summarise the outcome.</DialogDescription>
           </DialogHeader>
           <form
             className="space-y-3"
